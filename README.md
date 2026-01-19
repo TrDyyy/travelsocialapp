@@ -17,6 +17,15 @@
 ---
 
 ## 🎯 Tổng Quan
+**Hình ảnh**
+| Home Page | Post Screen | Chat Screen |
+|-----------|-----------|-------------|
+| ![home](assets/filter.png) | ![post](assets/post.png) | ![chat](assets/chat.png) |
+
+| AI Assistant | Admin View | Place Screen |
+|-----------|-----------|-------------|
+| ![ai](assets/ai.png) | ![post](assets/admin.png) | ![chat](assets/place.png) |
+
 
 **Travel Social App** là một nền tảng mạng xã hội chuyên về du lịch, kết hợp các tính năng:
 - 🗺️ Tìm kiếm & khám phá địa điểm du lịch
