@@ -1,0 +1,296 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ====================== HELPER FUNCTIONS ======================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Kiểm tra user có role admin trong collection users
+    function isAdmin() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Kiểm tra thành viên cộng đồng
+    function isCommunityMember(communityId) {
+      return communityId != null &&
+        exists(/databases/$(database)/documents/communities/$(communityId)) &&
+        request.auth.uid in get(/databases/$(database)/documents/communities/$(communityId)).data.memberIds;
+    }
+
+    // Kiểm tra admin của cộng đồng
+    function isCommunityAdmin(communityId) {
+      return communityId != null &&
+        exists(/databases/$(database)/documents/communities/$(communityId)) &&
+        request.auth.uid == get(/databases/$(database)/documents/communities/$(communityId)).data.adminId;
+    }
+
+    // ====================== USERS ======================
+    match /users/{userId} {
+      allow get: if true;                                       // Public profile (single doc)
+      allow list: if isAuthenticated();                                 // Admin có thể query/list users
+      allow write: if isOwner(userId) || isAdmin();             // Chỉ owner hoặc admin được sửa
+    }
+
+    // ====================== PLACES ======================
+    match /places/{placeId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        // Chủ sở hữu hoặc admin có thể update tất cả
+        resource.data.creatorId == request.auth.uid || 
+        isAdmin() ||
+        // Bất kỳ ai cũng có thể update rating/reviewCount (do review service tự động tính)
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'reviewCount', 'updatedAt']) ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'reviewCount'])
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.creatorId == request.auth.uid || isAdmin()
+      );
+    }
+
+    // ====================== REVIEWS ======================
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      // TODO: Sau khi dữ liệu sạch thì siết lại thành chỉ owner + admin
+      allow update, delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+    }
+
+    // ====================== TOURISM TYPES ======================
+    match /tourismTypes/{typeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ====================== PLACE EDIT REQUESTS ======================
+    match /placeEditRequests/{requestId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // ====================== COMMUNITIES ======================
+    match /communities/{communityId} {
+      allow read, list: if true;  // Cho khám phá cộng đồng
+
+      allow create: if isAuthenticated() && request.resource.data.adminId == request.auth.uid;
+
+      allow update: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.adminId == request.auth.uid ||
+        request.auth.uid in resource.data.memberIds ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pendingRequests', 'updatedAt'])
+      );
+
+      allow delete: if isAdmin() || resource.data.adminId == request.auth.uid;
+    }
+
+    // ====================== POSTS ======================
+    match /posts/{postId} {
+      // Đọc bài viết
+      allow get: if isAdmin() ||
+        resource.data.communityId == null ||
+        (isAuthenticated() && isCommunityMember(resource.data.communityId)) ||
+        (isAuthenticated() && request.auth.uid in resource.data.get('isSavedBy', []));
+
+      allow list: if isAdmin() || true;  // Cho query public posts
+
+      // Tạo bài viết
+      allow create: if isAdmin() || (isAuthenticated() && (
+        request.resource.data.communityId == null ||
+        isCommunityMember(request.resource.data.communityId)
+      ));
+
+      // Sửa bài viết
+      allow update: if isAdmin() || (isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount', 'likedBy', 'updatedAt']) ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount', 'updatedAt']) ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isSavedBy', 'updatedAt']) ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isSavedBy'])
+      ));
+
+      // Xóa bài viết
+      allow delete: if isAdmin() || (isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        (resource.data.communityId != null && isCommunityAdmin(resource.data.communityId))
+      ));
+
+      // Likes subcollection
+      match /likes/{likeId} {
+        allow read: if true;
+        allow create, delete: if isAuthenticated();
+      }
+
+      // Comments subcollection
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isAuthenticated();
+        allow update: if isAuthenticated() && (
+          resource.data.userId == request.auth.uid ||
+          // Cho phép update nếu chỉ thay đổi reactionCount (với hoặc không có updatedAt)
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactionCount', 'updatedAt']) ||
+           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactionCount']))
+        );
+        allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      }
+    }
+
+    // ====================== FRIENDSHIPS ======================
+    match /friendships/{friendshipId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId1 == request.auth.uid;
+      allow update, delete: if isAuthenticated() && (
+        resource.data.userId1 == request.auth.uid || resource.data.userId2 == request.auth.uid
+      );
+    }
+
+    // ====================== NOTIFICATIONS ======================
+    match /notifications/{notificationId} {
+      allow get: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow list: if isAuthenticated();  // Client sẽ filter
+      allow read: if isAdmin();          // Admin đọc hết
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+    }
+
+    // ====================== CHATS & MESSAGES ======================
+    match /chats/{chatId} {
+      allow read, list: if isAdmin() || (isAuthenticated() && (
+        request.auth.uid in resource.data.members ||
+        (resource.data.chatType == 'Cộng đồng' && resource.data.isPublic == true)
+      ));
+
+      allow create: if isAuthenticated() && request.auth.uid in request.resource.data.members;
+
+      allow update: if isAdmin() || (isAuthenticated() && (
+        // Any authenticated user can mute/unmute themselves for any chat they can see
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mutedBy']) ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mutedBy', 'updatedAt']) ||
+        // Group/Community admin can update name and avatar
+        (request.auth.uid == resource.data.groupAdmin && (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['groupName']) ||
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['groupAvatar']) ||
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['groupName', 'updatedAt']) ||
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['groupAvatar', 'updatedAt'])
+        )) ||
+        // Members can update other allowed fields
+        (request.auth.uid in resource.data.members && (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage', 'lastMessageTime', 'lastMessageSenderId', 'lastMessageImageCount']) ||
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+        ))
+      ));
+
+      allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.groupAdmin);
+    }
+
+    match /messages/{messageId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;
+
+      allow update: if isAuthenticated() && (
+        // Edit tin nhắn
+        (resource.data.senderId == request.auth.uid) ||
+        // Đánh dấu đã đọc
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']) ||
+        // Thu hồi tin nhắn
+        (resource.data.senderId == request.auth.uid && request.resource.data.isRecalled == true)
+      );
+
+      allow delete: if isAuthenticated() && resource.data.senderId == request.auth.uid;
+    }
+
+    // ====================== CALLS ======================
+    match /calls/{callId} {
+      allow read, list: if isAdmin() || (isAuthenticated() && (
+        request.auth.uid == resource.data.callerId || request.auth.uid in resource.data.receiverIds
+      ));
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.callerId;
+      allow update: if isAuthenticated() && (
+        request.auth.uid == resource.data.callerId || request.auth.uid in resource.data.receiverIds
+      );
+      allow delete: if isAdmin() || request.auth.uid == resource.data.callerId;
+    }
+
+    // ====================== REACTIONS ======================
+    match /reactions/{reactionId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ====================== AI CHAT SESSIONS ======================
+    match /ai_chat_sessions/{sessionId} {
+      allow read, list: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ====================== USER ACTIVITIES & PREFERENCES ======================
+    match /user_activities/{activityId} {
+      allow read, list: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create, update, delete: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /user_preferences/{userId} {
+      allow read, create, update, delete: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /preference_profiles/{userId} {
+      // userId chính là document ID - mỗi user chỉ có 1 profile duy nhất
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow create: if isAuthenticated() && 
+        request.auth.uid == userId &&
+        request.resource.data.userId == userId;
+      allow update: if isAuthenticated() && request.auth.uid == userId;
+      allow delete: if false; // Không cho xóa profile
+    }
+
+    // ====================== POINT HISTORY ======================
+    match /point_history/{historyId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated();
+      allow update, delete: if false;  // Immutable
+    }
+
+    // ====================== VIOLATION & WARNINGS ======================
+    match /violationRequests/{requestId} {
+      allow read, list: if isAdmin() || (isAuthenticated() && resource.data.reporterId == request.auth.uid);
+      allow create: if isAuthenticated() && request.resource.data.reporterId == request.auth.uid && request.resource.data.status == 'pending';
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.reporterId == request.auth.uid && resource.data.status == 'pending');
+      allow update: if isAdmin();
+    }
+
+    match /userViolations/{violationId} {
+      allow read, list: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /userWarnings/{warningId} {
+      allow read, list: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // ====================== ADMIN LOGS ======================
+    match /adminAuditLogs/{logId} {
+      allow read, list, create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    match /emailLogs/{logId} {
+      allow read, list: if isAdmin();
+      allow create: if true;
+      allow update, delete: if false;
+    }
+  }
+}

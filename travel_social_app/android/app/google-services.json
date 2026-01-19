@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "472951246345",
+    "project_id": "travelsocialapp-8f61a",
+    "storage_bucket": "travelsocialapp-8f61a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:472951246345:android:913a8e5816a1a2823c72d8",
+        "android_client_info": {
+          "package_name": "com.example.travel_social_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "472951246345-92lij6lffeaigfj3f2uceddpskbie22s.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.travel_social_app",
+            "certificate_hash": "a3618dd53896179c09c0b2cac0c913c55960dd2d"
+          }
+        },
+        {
+          "client_id": "472951246345-5krv8clrbkfsskpvqvgcdlhqgr8a25j3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEwQB8QqFmV5XNteT8M01aZ04p_ST8Dog"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "472951246345-5krv8clrbkfsskpvqvgcdlhqgr8a25j3.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "472951246345-edauek9abqavut2achs6m42f51cabfdf.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.mangXaHoiDuLich"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,46 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "travelsocialapp-8f61a",
+          "appId": "1:472951246345:android:913a8e5816a1a2823c72d8",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "travelsocialapp-8f61a",
+          "configurations": {
+            "android": "1:472951246345:android:913a8e5816a1a2823c72d8",
+            "ios": "1:472951246345:ios:d76e7189492528373c72d8",
+            "macos": "1:472951246345:ios:d76e7189492528373c72d8",
+            "web": "1:472951246345:web:d85ca0596853f6813c72d8",
+            "windows": "1:472951246345:web:183ce6027eafadf73c72d8"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ],
+      "predeploy": [],
+      "runtime": "nodejs20"
+    }
+  ]
+}

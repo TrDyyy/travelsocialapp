@@ -1,0 +1,132 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Cho phép đọc tất cả file (public read)
+    match /{allPaths=**} {
+      allow read: if true;
+    }
+    
+    // Rules cho thư mục reviews
+    match /reviews/{reviewFolder}/{fileName} {
+      // Cho phép user đã đăng nhập upload ảnh review
+      // reviewFolder format: placeId_userId
+      allow write: if request.auth != null 
+                   && request.resource.size < 5 * 1024 * 1024  // Max 5MB
+                   && request.resource.contentType.matches('image/.*'); // Chỉ cho phép ảnh
+    }
+    
+    // Rules cho thư mục places (ảnh của địa điểm)
+    match /places/{placeId}/{fileName} {
+      // Cho phép user đã đăng nhập upload ảnh địa điểm
+      allow write: if request.auth != null
+                   && request.resource.size < 5 * 1024 * 1024  // Max 5MB
+                   && request.resource.contentType.matches('image/.*'); // Chỉ cho phép ảnh
+    }
+    
+    // Rules cho thư mục user avatars
+    match /avatars/{fileName} {
+      // Cho phép user upload avatar của chính họ
+      // fileName format: userId.jpg
+      allow write: if request.auth != null 
+                   && fileName.matches(request.auth.uid + '.*')
+                   && request.resource.size < 2 * 1024 * 1024  // Max 2MB
+                   && request.resource.contentType.matches('image/.*'); // Chỉ cho phép ảnh
+      
+      // Cho phép user xóa avatar của chính họ
+      allow delete: if request.auth != null 
+                    && fileName.matches(request.auth.uid + '.*');
+    }
+    
+    // Rules cho thư mục users (backup pattern)
+    match /users/{userId}/{fileName} {
+      // Cho phép user upload avatar của chính họ
+      allow write: if request.auth != null 
+                   && request.auth.uid == userId
+                   && request.resource.size < 2 * 1024 * 1024  // Max 2MB
+                   && request.resource.contentType.matches('image/.*'); // Chỉ cho phép ảnh
+    }
+    
+    // Rules cho thư mục posts (bài viết mạng xã hội)
+    match /posts/{postFolder}/{fileName} {
+      // Cho phép user đã đăng nhập upload media cho post
+      // postFolder format: userId_timestamp
+      allow write: if request.auth != null
+                   && request.resource.size < 50 * 1024 * 1024  // Max 50MB (để upload video)
+                   && (request.resource.contentType.matches('image/.*') 
+                       || request.resource.contentType.matches('video/.*')); // Cho phép ảnh và video
+      
+      // Cho phép user xóa media của post do họ tạo
+      allow delete: if request.auth != null;
+    }
+    
+    // Rules cho thư mục comments (bình luận của post)
+    match /comments/{commentFolder}/{fileName} {
+      // Cho phép user đã đăng nhập upload ảnh cho comment
+      // commentFolder format: postId_userId_timestamp
+      allow write: if request.auth != null
+                   && request.resource.size < 5 * 1024 * 1024  // Max 5MB
+                   && request.resource.contentType.matches('image/.*'); // Chỉ cho phép ảnh
+      
+      // Cho phép user xóa ảnh comment của họ
+      allow delete: if request.auth != null;
+    }
+    
+    // Rules cho thư mục chat_images (ảnh trong chat)
+    match /chat_images/{chatId}/{fileName} {
+      // Cho phép user đã đăng nhập upload ảnh trong chat
+      allow write: if request.auth != null
+                   && request.resource.size < 10 * 1024 * 1024  // Max 10MB
+                   && request.resource.contentType.matches('image/.*'); // Chỉ cho phép ảnh
+      
+      // Cho phép user xóa ảnh trong chat
+      allow delete: if request.auth != null;
+    }
+    
+    // Rules cho thư mục chat_backgrounds (ảnh nền chat)
+    match /chat_backgrounds/{fileName} {
+      // Cho phép user đã đăng nhập upload ảnh nền chat
+      // fileName format: chatId_userId.jpg
+      allow write: if request.auth != null
+                   && request.resource.size < 5 * 1024 * 1024  // Max 5MB
+                   && request.resource.contentType.matches('image/.*');
+      
+      allow delete: if request.auth != null;
+    }
+    
+    // Rules cho thư mục group_avatars (ảnh đại diện nhóm)
+    match /group_avatars/{fileName} {
+      // Cho phép user đã đăng nhập upload/update ảnh nhóm
+      // fileName format: chatId.jpg
+      allow write: if request.auth != null
+                   && request.resource.size < 5 * 1024 * 1024  // Max 5MB
+                   && request.resource.contentType.matches('image/.*');
+      
+      allow delete: if request.auth != null;
+    }
+    
+    // Rules cho thư mục community_avatars (ảnh đại diện cộng đồng)
+    match /community_avatars/{fileName} {
+      // Cho phép user đã đăng nhập upload/update ảnh cộng đồng
+      // fileName format: communityId.jpg
+      allow write: if request.auth != null
+                   && request.resource.size < 5 * 1024 * 1024  // Max 5MB
+                   && request.resource.contentType.matches('image/.*');
+      
+      allow delete: if request.auth != null;
+    }
+    
+    // Rules cho thư mục community_images (ảnh của cộng đồng)
+    match /community_images/{fileName} {
+      // Cho phép user đã đăng nhập upload/update ảnh cộng đồng
+      // fileName format: communityId_timestamp.jpg
+      allow write: if request.auth != null
+                   && request.resource.size < 5 * 1024 * 1024  // Max 5MB
+                   && request.resource.contentType.matches('image/.*');
+      
+      allow delete: if request.auth != null;
+    }
+  }
+}
