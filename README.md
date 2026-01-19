@@ -24,7 +24,7 @@
 
 | AI Assistant | Admin View | Place Screen |
 |-----------|-----------|-------------|
-| ![ai](assets/ai.jpg) | ![post](assets/admin.jpg) | ![chat](assets/place.jpg) |
+| ![ai](assets/ai.jpg) | ![admin](assets/admin.jpg) | ![place](assets/place.jpg) |
 
 
 **Hình Ảnh**
