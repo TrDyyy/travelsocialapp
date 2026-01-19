@@ -20,11 +20,11 @@
 **Hình ảnh**
 | Home Page | Post Screen | Chat Screen |
 |-----------|-----------|-------------|
-| ![home](assets/filter.png) | ![post](assets/post.png) | ![chat](assets/chat.png) |
+| ![home](assets/filter.jpg) | ![post](assets/post.jpg) | ![chat](assets/chat.jpg) |
 
 | AI Assistant | Admin View | Place Screen |
 |-----------|-----------|-------------|
-| ![ai](assets/ai.png) | ![post](assets/admin.png) | ![chat](assets/place.png) |
+| ![ai](assets/ai.jpg) | ![post](assets/admin.jpg) | ![chat](assets/place.jpg) |
 
 
 **Travel Social App** là một nền tảng mạng xã hội chuyên về du lịch, kết hợp các tính năng:
