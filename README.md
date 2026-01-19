@@ -19,13 +19,13 @@
 ## 🎯 Tổng Quan
 
 **Hình Ảnh**
-| Home Page | Post Screen | Chat Screen |
+| Place Screen | Post Screen | Chat Screen |
 |-----------|-----------|-------------|
-| ![home](assets/filter.jpg) | ![post](assets/post.jpg) | ![chat](assets/chat.jpg) |
+| ![place](assets/place.jpg) | ![post](assets/post.jpg) | ![chat](assets/chat.jpg) |
 
-| AI Assistant | Admin View | Place Screen |
+| AI Assistant | Gamification Screen | Smart Recommendation |
 |-----------|-----------|-------------|
-| ![ai](assets/ai.jpg) | ![admin](assets/admin.jpg) | ![place](assets/place.jpg) |
+| ![ai](assets/ai.jpg) | ![admin](assets/gami.jpg) | ![smart](assets/smart.jpg) |
 
 
 **Travel Social App** là một nền tảng mạng xã hội chuyên về du lịch, kết hợp các tính năng:
