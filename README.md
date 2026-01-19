@@ -17,6 +17,15 @@
 ---
 
 ## 🎯 Tổng Quan
+**Hình ảnh**
+| Home Page | Post Screen | Chat Screen |
+|-----------|-----------|-------------|
+| ![home](assets/filter.jpg) | ![post](assets/post.jpg) | ![chat](assets/chat.jpg) |
+
+| AI Assistant | Admin View | Place Screen |
+|-----------|-----------|-------------|
+| ![ai](assets/ai.jpg) | ![post](assets/admin.jpg) | ![chat](assets/place.jpg) |
+
 
 **Hình Ảnh**
 | Home Page | Post Screen | Chat Screen |
